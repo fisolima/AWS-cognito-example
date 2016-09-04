@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AWS Cognito example</title>
+    <style>
+.panel {
+    border: solid 2px black;
+    border-radius: 5px;
+    width: 300px;
+}
+
+.panel div:first-child {
+    margin: 10px;
+}
+    </style>
+</head>
+<body>
+<h1>Home</h1>
+
+<div class="panel">
+    <div>
+        <h2>Login DCS User</h2>
+        <span>Username:</span><br><input type="text" placeholder="Enter username" data-pool-id="dcs" data-type="login-username"/><br>
+        <span>Password:</span><br><input type="password" placeholder="Enter password" data-pool-id="dcs" data-type="login-password"/><br>
+        <button data-pool-id="dcs" data-type="login" onclick="com.killpippo.app.login(this)">SignUp</button>
+        <br><br>
+        <h2>Create DCS User</h2>
+        <span>Username:</span><br><input type="text" placeholder="Enter username" data-pool-id="dcs" data-type="register-username"/><br>
+        <span>Email:</span><br><input type="text" placeholder="Enter email" data-pool-id="dcs" data-type="register-email"/><br>
+        <span>Password:</span><br><input type="password" placeholder="Enter password" data-pool-id="dcs" data-type="register-password"/><br>
+        <span>Confirm:</span><br><input type="password" placeholder="Confirm password" data-pool-id="dcs" data-type="register-confirm-password"/><br>
+        <button data-pool-id="dcs" data-type="register" onclick="com.killpippo.app.registerUser(this)">SignUp</button>
+        <br><br>
+        <h2>Confirm DCS User</h2>
+        <span>Username:</span><br><input type="text" id="confirmUsername" placeholder="Enter username" data-pool-id="dcs" data-type="register-confirm-username"/><br>
+        <span>Username:</span><br><input type="text" id="confirmCode" placeholder="Enter code" data-pool-id="dcs" data-type="register-confirm-code"/><br>
+        <button data-pool-id="dcs" data-type="register-confirm"  onclick="com.killpippo.app.confirmUserRegistration(this)">Confirm</button>
+    </div>
+</div>
+
+<script src="libs/jsbn.js"></script>
+<script src="libs/jsbn2.js"></script>
+<script src="libs/sjcl.js"></script>
+<script src="libs/aws-cognito-sdk.min.js"></script>
+<script src="libs/aws-cognito-identity.min.js"></script>
+<script src="libs/aws-sdk.min.js"></script>
+
+
+<script src="js/globals.js"></script>
+<script src="js/logger.js"></script>
+<script src="js/awsService.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+    window.onload = com.killpippo.app.load;
+</script>
+</body>
+</html>
