@@ -1,0 +1,16 @@
+{
+  "dcs":
+  {
+    "region": "<AWS REGION>",
+    "identityPoolId": "<AWS IDENTITY POOL ID>",
+    "userPoolId": "<AWS USER POOL ID>",
+    "clientId": "<AWS CLIENT ID>"
+  },
+  "lsp":
+  {
+    "region": "<AWS REGION>",
+    "identityPoolId": "<AWS IDENTITY POOL ID>",
+    "userPoolId": "<AWS USER POOL ID>",
+    "clientId": "<AWS CLIENT ID>"
+  }
+}

@@ -6,7 +6,8 @@
 
 	com.killpippo.services.comm = comm;
 
-	var logger = comm.killpippo.logger;
+	var logger = com.killpippo.logger;
+	var auth = com.killpippo.services.auth;
 
 	var processRequest = function(method, url, data, onError, onSuccess) {
 		var xhr = new XMLHttpRequest();
@@ -27,6 +28,11 @@
 		};
 
 		xhr.open(method, url);
+
+		var token = auth.getToken();
+
+		if (token)
+			xhr.setRequestHeader('Authorization', token);
 
 		if (data) {
 			xhr.setRequestHeader('Content-Type', 'application/json');

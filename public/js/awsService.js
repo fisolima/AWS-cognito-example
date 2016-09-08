@@ -6,37 +6,59 @@
 
 	var logger = com.killpippo.logger;
 
-	service.load = function() {
-		logger.info("AWS loading...");
+	var comm = com.killpippo.services.comm;
 
-		AWS.config.region = 'eu-west-1'; // Region
+	var loadPool = function(poolId, config) {
+		AWS.config.region = config.region;
         AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-            IdentityPoolId: 'eu-west-1:710c4d3c-06f9-4884-8745-0acf075958a2'
+            IdentityPoolId: config.identityPoolId
         });
 
         // Cognito credential and User Pool Id
-        AWSCognito.config.region = 'eu-west-1';
+        AWSCognito.config.region = config.region;
         AWSCognito.config.credentials = new AWS.CognitoIdentityCredentials({
-            IdentityPoolId: 'eu-west-1:710c4d3c-06f9-4884-8745-0acf075958a2'
+            IdentityPoolId: config.identityPoolId
         });
 
 		var poolData = {
-			UserPoolId : 'eu-west-1_IB357mfCC', // your user pool id here
-			ClientId : '4jln93ac35uk8ptqkv6cttnaap' // your app client id here
+			UserPoolId : config.userPoolId,
+			ClientId : config.clientId
 		};
 		var userPool =
 			new AWSCognito.CognitoIdentityServiceProvider.CognitoUserPool(poolData);
 
-		logger.info("AWS loading - userPool generated");
+		service[poolId] = service[poolId] || {};
 
-		service.userPool = userPool;
+		service[poolId].pool = userPool;
 
-		logger.info("AWS loaded");
+		logger.info("AWS loaded - " + poolId);
 	};
 
-	service.createUser = function(username, password, email) {
-		if (!service.userPool)
-			return logger.error("AWS UserPool not created");
+	service.load = function() {
+		com.killpippo.services.auth.cleanToken();
+
+		comm.get('/api/config/dcs',
+			function(err) {
+				logger.error("Loading DCS Pool", err);
+			},
+			function(data) {
+				loadPool('dcs', JSON.parse(data));
+			});
+
+		comm.get('/api/config/lsp',
+			function(err) {
+				logger.error("Loading LSP Pool", err);
+			},
+			function(data) {
+				loadPool('lsp', JSON.parse(data));
+			});
+	};
+
+	service.createUser = function(poolId, username, password, email, callback) {
+		if (!service[poolId])
+			return logger.error("AWS UserPool not loaded");
+
+		var userPool = service[poolId].pool;
 
 		var attributeList = [];
 
@@ -49,23 +71,30 @@
 
 		attributeList.push(attributeEmail);
 
-		service.userPool.signUp(username, password, attributeList, null, function(err, result){
-			if (err)
-				return logger.error("AWS Signup", err);
+		userPool.signUp(username, password, attributeList, null, function(err, result){
+			if (err) {
+				logger.error("AWS Signup", err);
+
+				return callback(err, null);
+			}
 
 			var cognitoUser = result.user;
 
 			logger.info("AWS signed up", cognitoUser.getUsername());
+
+			callback(null, result);
 		});
 	};
 
-	service.confirmUser = function(username,code) {
-		if (!service.userPool)
-			return logger.error("AWS UserPool not created");
+	service.confirmUser = function(poolId, username, code) {
+		if (!service[poolId])
+			return logger.error("AWS UserPool not loaded");
+
+		var userPool = service[poolId].pool;
 
 		var userData = {
 			Username : username,
-			Pool : service.userPool
+			Pool : userPool
 		};
 
 		var cognitoUser = new AWSCognito.CognitoIdentityServiceProvider.CognitoUser(userData);
@@ -78,9 +107,11 @@
 		});
 	};
 
-	service.loginUser = function(username, password) {
-		if (!service.userPool)
-			return logger.error("AWS UserPool not created");
+	service.loginUser = function(poolId, username, password, callback) {
+		if (!service[poolId])
+			return logger.error("AWS UserPool not loaded");
+
+		var userPool = service[poolId].pool;
 
 		var authenticationData = {
 			Username : username,
@@ -91,18 +122,39 @@
 
 		var userData = {
 			Username : username,
-			Pool : service.userPool
+			Pool : userPool
 		};
 
 		var cognitoUser = new AWSCognito.CognitoIdentityServiceProvider.CognitoUser(userData);
 
 		cognitoUser.authenticateUser(authenticationDetails, {
 			onSuccess: function (result) {
-				logger.info("Access garanted", result.getAccessToken().getJwtToken());
+				// logger.info("Access result", result);
+				//
+				// var accessToken = result.getAccessToken().getJwtToken();
+				//
+				// logger.info("Access garanted ", accessToken);
+				//
+				// var idToken = result.getIdToken().getJwtToken();
+				//
+				// logger.info("Access garanted", idToken);
+				//
+				// var payload = token.split('.')[1];
+				// var parsedToken = JSON.parse(sjcl.codec.utf8String.fromBits(sjcl.codec.base64url.toBits(payload)));
+				//
+				// console.log('%o', parsedToken);
+
+				result.getAccessToken().getJwtToken();
+
+				com.killpippo.services.auth.storeToken(result);
+
+				callback(null, result);
 			},
 
 			onFailure: function(err) {
 				logger.error("Access failed", err);
+
+				callback(err, null);
 			},
 			mfaRequired: function(codeDeliveryDetails) {
 				var verificationCode = prompt('Please input verification code' ,'');
